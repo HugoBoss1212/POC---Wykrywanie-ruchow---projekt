@@ -1,14 +1,13 @@
 import numpy as np
 from skimage.color import rgb2gray
-from skimage.filters import rank, threshold_mean, sobel
-from skimage.morphology import diamond, erosion, dilation, closing
+from skimage.filters import rank, threshold_mean
+from skimage.morphology import diamond, erosion, dilation
 import cv2
 import keyboard
 
 
 class PostVideo:
     def __init__(self):
-        self.frame = None
         self.th = None
 
     def update(self, frames):
@@ -27,7 +26,7 @@ class PostVideo:
         pic1 = self.pic1_(pic1)
         pic2 = self.pic2_(pic2)
 
-        self.frame = cv2.bitwise_and(pic1, pic2)
+        return cv2.bitwise_and(pic1, pic2)
 
     def prep(self, frame):
         if self.th is None:
@@ -39,15 +38,16 @@ class PostVideo:
 
     @staticmethod
     def pic1_(pic1):
-        pic1 = erosion(pic1)
-        pic1 = erosion(pic1)
-        pic1 = erosion(pic1)
-        pic1 = dilation(pic1)
-        pic1 = sobel(pic1)
+        kernel = np.ones((5, 5), np.uint8)
+        pic1 = cv2.erode(pic1, kernel, iterations=1)
+        pic1 = cv2.morphologyEx(pic1, cv2.MORPH_CLOSE, kernel)
+        pic1 = cv2.dilate(pic1, kernel, iterations=1)
+        pic1 = cv2.Laplacian(pic1, cv2.CV_64F)
         return pic1
 
     @staticmethod
     def pic2_(pic2):
-        pic2 = sobel(pic2)
-        pic2 = dilation(pic2)
+        kernel = np.ones((5, 5), np.uint8)
+        pic2 = cv2.Laplacian(pic2, cv2.CV_64F)
+        pic2 = cv2.dilate(pic2, kernel, iterations=1)
         return pic2

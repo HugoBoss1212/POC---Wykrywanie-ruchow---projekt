@@ -11,7 +11,7 @@ class Rect:
     def count_rect(self):
         self.rect[0] = (self.y[0], self.x[0])
         element, index = max(list(zip(self.y, range(len(self.y)))))
-        self.rect[1] = (element, self.x[index])
+        self.rect[1] = (element + 20, self.x[index] + 150)
         self.draw = True
 
     def points(self, frame):

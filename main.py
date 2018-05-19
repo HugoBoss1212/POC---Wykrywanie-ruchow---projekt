@@ -17,7 +17,8 @@ def processing(show_):
 
 def rect(show_):
     while cam_obj.exit():
-        rect_obj.points(post_cam_obj.frame)
+        if cam_obj.frame[0] is not None and cam_obj.frame[1] is not None:
+            rect_obj.points(post_cam_obj.update(cam_obj.frame))
 
 
 def main_():
@@ -26,10 +27,10 @@ def main_():
     t1.start()
     t2.start()
 
-    while cam_obj.exit():
-        if cam_obj.frame[0] is not None and cam_obj.frame[1] is not None:
-            post_cam_obj.update(cam_obj.frame)
-    quit()
+    # while cam_obj.exit():
+    #     if cam_obj.frame[0] is not None and cam_obj.frame[1] is not None:
+    #         post_cam_obj.update(cam_obj.frame)
+    # quit()
 
 
 if __name__ == '__main__':
