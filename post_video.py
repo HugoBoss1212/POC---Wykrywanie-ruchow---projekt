@@ -1,41 +1,51 @@
 import numpy as np
 from skimage.color import rgb2gray
 from skimage.filters import rank, threshold_mean, sobel
-from skimage.morphology import square, erosion, dilation, opening, closing
-import matplotlib.pyplot as plt
+from skimage.morphology import square, erosion, dilation, closing
+import cv2
 
 
 class PostVideo:
-    def __init__(self):
-        self.frame = None
+  def __init__(self):
+    self.frame = None
+    self.pic1 = None
+    self.pic2 = None
+    self.results = None
 
-    def update(self, frames):
-            pic1 = rgb2gray(np.copy(frames[0]))
-            pic2 = rgb2gray(np.copy(frames[1]))
+    self.rect = (0, 0, 0, 0)
 
-            pic1 = rank.mean(pic1, selem=square(10))
-            pic2 = rank.mean(pic2, selem=square(10))
+  def update(self, frames):
+    self.pic1 = self.prep(frames[0])
+    self.pic2 = self.prep(frames[1])
 
-            pic1 = (pic1 < threshold_mean(pic1))
-            pic2 = (pic2 < threshold_mean(pic2))
+    if self.pic1 is not None and self.pic2 is not None:
+      pic1 = np.subtract(self.pic2, self.pic1)
 
-            pic1 = np.subtract(pic2.astype(int), pic1.astype(int))
+      pic1 = self.pic1_(pic1)
+      pic2 = self.pic2_(self.pic2)
 
-            pic1 = erosion(pic1)
-            pic2 = sobel(pic2)
+      self.frame = cv2.bitwise_and(pic1, pic2)
 
-            pic1 = dilation(pic1)
-            pic2 = dilation(pic2)
+      cv2.imshow("frame", self.frame)
 
-            pic1 = closing(pic1, selem=square(3))
-            pic1 = sobel(pic1)
+  @staticmethod
+  def prep(frame):
+    frame = rgb2gray(frame)
+    frame = rank.mean(frame, selem=square(10))
+    ret, frame = cv2.threshold(frame, threshold_mean(frame), 255, cv2.THRESH_BINARY)
+    return frame
 
-            self.frame = np.logical_and(pic2, pic1)
+  @staticmethod
+  def pic1_(pic1):
+    pic1 = erosion(pic1)
+    pic1 = erosion(pic1)
+    pic1 = dilation(pic1)
+    pic1 = closing(pic1, selem=square(3))
+    pic1 = sobel(pic1)
+    return pic1
 
-            self.show(self.frame)
-
-    @staticmethod
-    def show(test):
-        plt.imshow(test, cmap="gray")
-        plt.axis("off")
-        plt.show()
+  @staticmethod
+  def pic2_(pic2):
+    pic2 = sobel(pic2)
+    pic2 = dilation(pic2)
+    return pic2
