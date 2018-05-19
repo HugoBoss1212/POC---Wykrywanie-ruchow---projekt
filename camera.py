@@ -21,16 +21,12 @@ class Camera:
 
     def update(self, show=False, fps=False, avg_fps=False):
         self.count += 1
-        self.pass_frame()
+        if self.count % self.step == 0: self.temp.append(self.camera_01.read()[1])
         if show: self.show(fps, avg_fps)
         if len(self.temp) == 2:
             self.frame[0] = self.temp[0]
             self.frame[1] = self.temp[1]
             self.temp.clear()
-
-    def pass_frame(self):
-        if self.count % self.step == 0:
-            self.temp.append(self.camera_01.read()[1])
 
     def show(self, fps, avg_fps):
         start = time.time()
