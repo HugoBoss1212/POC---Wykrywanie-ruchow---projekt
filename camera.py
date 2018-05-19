@@ -1,51 +1,49 @@
 import cv2
-import time
+import numpy as np
 
 
 class Camera:
-    def __init__(self, mirror, frame_name, step):
+    def __init__(self, ignored_area, mirror, step):
         self.camera_01 = cv2.VideoCapture(0)
+        self.first_frame = None
+        self.frame = None
+        self.gray = None
+        self.ignored_area = ignored_area
         self.mirror = mirror
-        self.frame_name = frame_name
-        self.fps = 0
         self.count = 0
-        self.avg_fps = 0
-        self.start_time = time.time()
-        self.end_time = 0
-        self.img = None
         self.step = step
-        self.frame = []
-        self.temp = []
-        self.frame.append(None)
-        self.frame.append(None)
-        self.rect = [(0, 0), (0, 0)]
 
-    def update(self, rect, test, show=False, fps=False, avg_fps=False):
+    def update(self):
         self.count += 1
-        if self.count % self.step == 0: self.temp.append(self.camera_01.read()[1])
-        if show: self.show(fps, avg_fps, rect, test)
-        if len(self.temp) == 2:
-            self.frame[0] = self.temp[0]
-            self.frame[1] = self.temp[1]
-            self.temp.clear()
+        (grabbed, self.frame) = self.camera_01.read()
 
-    def show(self, fps, avg_fps, rect, test):
-        self.rect = rect
-        start = time.time()
-        ret_val, self.img = self.camera_01.read()
-        if test: self.draw_rect(rect)
-        self.end_time = end = time.time()
-        if self.mirror: self.img = cv2.flip(self.img, 1)
-        if fps and (end - start) > 0:
-            print(self.fps)
-            self.fps = 1 / (end - start)
-        if avg_fps and (self.end_time - self.start_time) > 0:
-            print(self.avg_fps)
-            self.avg_fps = self.count / (self.end_time - self.start_time)
-        cv2.imshow(self.frame_name + "01", self.img)
+        self.gray = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
+        self.gray = cv2.GaussianBlur(self.gray, (21, 21), 0)
 
-    def draw_rect(self, rect):
-        cv2.rectangle(self.img, rect[0], rect[1], (0, 255, 0), 3)
+        if self.first_frame is None or self.count % self.step == 0:
+            self.first_frame = self.gray.copy()
+
+        self.calc_rect()
+        cv2.imshow("Live Feed", self.frame)
+
+    def calc_rect(self):
+        if self.frame is not None and self.gray is not None:
+            kernel = np.ones((5, 5), np.uint8)
+
+            frame_delta = cv2.absdiff(self.first_frame, self.gray)
+            thresh = cv2.threshold(frame_delta, 25, 255, cv2.THRESH_BINARY)[1]
+            thresh = cv2.dilate(thresh, kernel, iterations=2)
+            im, cnts, hier = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            for c in cnts:
+                if cv2.contourArea(c) < self.ignored_area: continue
+                self.show_feed(cv2.boundingRect(c))
+
+    def show_feed(self, rect):
+        if rect is not None:
+            (x, y, w, h) = rect
+            # if self.mirror: self.frame = cv2.flip(self.frame, 1)
+            cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
     @staticmethod
     def exit():
