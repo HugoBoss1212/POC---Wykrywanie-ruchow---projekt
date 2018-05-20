@@ -1,4 +1,5 @@
 import cv2
+import keyboard
 import numpy as np
 
 
@@ -13,6 +14,11 @@ class Camera:
         self.count = 0
         self.step = step
 
+        self.x = 0
+        self.y = 0
+        self.w = 0
+        self.h = 0
+
     def update(self):
         self.count += 1
         (grabbed, self.frame) = self.camera_01.read()
@@ -23,6 +29,7 @@ class Camera:
         if self.first_frame is None or self.count % self.step == 0:
             self.first_frame = self.gray.copy()
 
+        self.keyboard_input()
         self.calc_rect()
         cv2.imshow("Live Feed", self.frame)
 
@@ -41,9 +48,23 @@ class Camera:
 
     def show_feed(self, rect):
         if rect is not None:
-            (x, y, w, h) = rect
+            (self.x, self.y, self.w, self.h) = rect
             # if self.mirror: self.frame = cv2.flip(self.frame, 1)
-            cv2.rectangle(self.frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.rectangle(self.frame, (self.x, self.y), (self.x + self.w, self.y + self.h), (0, 255, 0), 2)
+
+    def keyboard_input(self):
+        if keyboard.is_pressed('+'):
+            self.step += 1
+            print("Step: " + str(self.step))
+        if keyboard.is_pressed('-'):
+            if self.step > 1: self.step -= 1
+            print("Step: " + str(self.step))
+        if keyboard.is_pressed(']'):
+            self.ignored_area += 10
+            print("Ignored area: " + str(self.ignored_area))
+        if keyboard.is_pressed('['):
+            self.ignored_area -= 10
+            print("Ignored area: " + str(self.ignored_area))
 
     @staticmethod
     def exit():

@@ -1,7 +1,7 @@
 import camera
 
 mirror = True
-cam_obj = camera.Camera(500, mirror, 3)
+cam_obj = camera.Camera(10, mirror, 10)
 
 
 def main_():
